@@ -1,6 +1,6 @@
 <template>
-  <div class="dropdown" :class="{ dropdown_opened: isDropDownOpen }" @click="toggleState()" ref="dropdown">
-    <button type="button" class="dropdown__toggle" :class="{ dropdown__toggle_icon: isIconsInButtons }">
+  <div class="dropdown" :class="{ dropdown_opened: isDropDownOpen }">
+    <button type="button" class="dropdown__toggle" :class="{ dropdown__toggle_icon: isIconsInButtons }" @click="toggleState()">
       <ui-icon :icon="selectedOptionIcon" class="dropdown__icon" />
       <span>{{ selectedOptionName }}</span>
     </button>
@@ -12,7 +12,7 @@
         :class="{ dropdown__item_icon: isIconsInButtons }"
         role="option"
         type="button"
-        @click.stop="changeSelectOption(option.value)"
+        @click="changeSelectOption(option.value)"
       >
         <ui-icon :icon="option.icon || ''" class="dropdown__icon" />
         {{ option.text }}
