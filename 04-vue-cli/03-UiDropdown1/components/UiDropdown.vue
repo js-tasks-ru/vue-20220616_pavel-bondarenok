@@ -1,31 +1,92 @@
 <template>
-  <div class="dropdown dropdown_opened">
-    <button type="button" class="dropdown__toggle dropdown__toggle_icon">
-      <ui-icon icon="tv" class="dropdown__icon" />
-      <span>Title</span>
+  <div class="dropdown" :class="{ dropdown_opened: isDropDownOpen }" @click="toggleState()" ref="dropdown">
+    <button type="button" class="dropdown__toggle" :class="{ dropdown__toggle_icon: isIconsInButtons }">
+      <ui-icon :icon="selectedOptionIcon" class="dropdown__icon" />
+      <span>{{ selectedOptionName }}</span>
     </button>
 
-    <div class="dropdown__menu" role="listbox">
-      <button class="dropdown__item dropdown__item_icon" role="option" type="button">
-        <ui-icon icon="tv" class="dropdown__icon" />
-        Option 1
-      </button>
-      <button class="dropdown__item dropdown__item_icon" role="option" type="button">
-        <ui-icon icon="tv" class="dropdown__icon" />
-        Option 2
+    <div v-show="isDropDownOpen" class="dropdown__menu" role="listbox">
+      <button
+        v-for="option in options"
+        class="dropdown__item"
+        :class="{ dropdown__item_icon: isIconsInButtons }"
+        role="option"
+        type="button"
+        @click.stop="changeSelectOption(option.value)"
+      >
+        <ui-icon :icon="option.icon || ''" class="dropdown__icon" />
+        {{ option.text }}
       </button>
     </div>
   </div>
+  <select ref="hiddenSelect" :value="modelValue" style="display: none" @change="setSelectedOption()">
+    <option v-for="option in options" :value="option.value">
+      {{ option.text }}
+    </option>
+  </select>
 </template>
 
-<script>
-import UiIcon from './UiIcon';
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
+import UiIcon from './UiIcon.vue';
 
-export default {
+interface Option {
+  value: string;
+  text: string;
+  icon?: string;
+}
+
+export default defineComponent({
   name: 'UiDropdown',
-
   components: { UiIcon },
-};
+  props: {
+    options: {
+      type: Object as PropType<Array<Option>>,
+      required: true,
+      validator: (options: Array<Option>) => {
+        return options.every((option) => Object.keys(option).includes('value') && Object.keys(option).includes('text'));
+      },
+    },
+    modelValue: String,
+    title: {
+      type: String,
+      required: true,
+    },
+  },
+  emits: ['update:modelValue'],
+  data() {
+    return {
+      isDropDownOpen: false,
+    };
+  },
+  computed: {
+    selectedOption(): Option | undefined {
+      return this.options.find((opt) => opt.value === this.modelValue);
+    },
+    selectedOptionName(): string {
+      return this.selectedOption?.text || this.title;
+    },
+    selectedOptionIcon(): string {
+      return this.selectedOption?.icon || '';
+    },
+    isIconsInButtons(): boolean {
+      return this.options.some((option: Option) => 'icon' in option);
+    },
+  },
+  methods: {
+    toggleState() {
+      this.isDropDownOpen = !this.isDropDownOpen;
+    },
+    changeSelectOption(value: string) {
+      this.$emit('update:modelValue', value);
+      this.toggleState();
+    },
+    setSelectedOption() {
+      const value: string = (this.$refs.hiddenSelect as HTMLSelectElement).value;
+      this.$emit('update:modelValue', value);
+    },
+  },
+});
 </script>
 
 <style scoped>
