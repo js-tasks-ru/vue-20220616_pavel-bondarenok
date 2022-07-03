@@ -1,78 +1,56 @@
 <template>
   <div class="toasts">
-    <div
-      v-for="toast in toasts"
-      class="toast"
-      :class="dynamicClasses(toast)"
-    >
-      <ui-icon class="toast__icon" :icon="toast.icon" />
-      <span>{{ toast.message }}</span>
-    </div>
+    <toast-message v-for="(toast, index) in toasts" :key="index" :toast="toast" />
   </div>
 </template>
 
 <script lang="ts">
-import UiIcon from './UiIcon.vue';
-import { defineComponent, PropType } from 'vue';
-
-enum ToastType {
-  SUCCESS,
-  ERROR,
-}
-
-interface Toast {
-  message: string;
-  type: ToastType;
-  icon: string;
-}
+import { defineComponent } from 'vue';
+import ToastMessage from './ToastMessage.vue';
+import { ToastType, Toast } from './Structures';
 
 interface DataSet {
   toasts: Array<Toast>;
-  toastDelay: number;
+  defaultDurationTime: number;
 }
 
 export default defineComponent({
   name: 'TheToaster',
-  components: { UiIcon },
+  components: { ToastMessage },
   data(): DataSet {
     return {
       toasts: [],
-      toastDelay: 5000,
+      defaultDurationTime: 5000,
     };
   },
   methods: {
-    dynamicClasses(toast: Toast) {
-      return {
-        toast_success: toast.type === ToastType.SUCCESS,
-        toast_error: toast.type === ToastType.ERROR,
-      };
-    },
     addToast(toast: Toast): void {
       this.toasts.push(toast);
       this.removeToast(toast);
     },
     removeToast(toast: Toast): number {
-      const timeoutId = setTimeout(() => {
-        const index: number = this.toasts.findIndex((item) => item.type === toast.type && item.message === toast.message);
+      return setTimeout(() => {
+        const index: number = this.toasts.findIndex(
+          (item) => item.type === toast.type && item.message === toast.message,
+        );
         this.toasts.splice(index, 1);
-      }, this.toastDelay);
-      return timeoutId;
+      }, toast.displayedTime);
     },
-    success(message: string): void {
-      const toast: Toast = {
+    success(message: string, duration = 0): void {
+      this.addToast({
         message,
         type: ToastType.SUCCESS,
         icon: 'check-circle',
-      };
-      this.addToast(toast);
+        displayedTime: duration > 0 ? duration : this.defaultDurationTime,
+      });
     },
-    error(message: string): void {
-      const toast: Toast = {
+    error(message: string, duration = 0): void {
+      this.addToast({
         message,
         type: ToastType.ERROR,
         icon: 'alert-circle',
-      };
-      this.addToast(toast);
+        displayedTime: duration > 0 ? duration : this.defaultDurationTime,
+      });
     },
   },
 });
@@ -95,35 +73,5 @@ export default defineComponent({
     bottom: 72px;
     right: 112px;
   }
-}
-
-.toast {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: row;
-  align-items: center;
-  padding: 16px;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  font-size: 18px;
-  line-height: 28px;
-  width: auto;
-}
-
-.toast + .toast {
-  margin-top: 20px;
-}
-
-.toast__icon {
-  margin-right: 12px;
-}
-
-.toast.toast_success {
-  color: var(--green);
-}
-
-.toast.toast_error {
-  color: var(--red);
 }
 </style>
