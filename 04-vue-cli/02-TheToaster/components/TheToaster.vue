@@ -1,25 +1,81 @@
 <template>
   <div class="toasts">
-    <div class="toast toast_success">
-      <ui-icon class="toast__icon" icon="check-circle" />
-      <span>Success Toast Example</span>
-    </div>
-
-    <div class="toast toast_error">
-      <ui-icon class="toast__icon" icon="alert-circle" />
-      <span>Error Toast Example</span>
+    <div
+      v-for="toast in toasts"
+      class="toast"
+      :class="dynamicClasses(toast)"
+    >
+      <ui-icon class="toast__icon" :icon="toast.icon" />
+      <span>{{ toast.message }}</span>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import UiIcon from './UiIcon.vue';
+import { defineComponent, PropType } from 'vue';
 
-export default {
+enum ToastType {
+  SUCCESS,
+  ERROR,
+}
+
+interface Toast {
+  message: string;
+  type: ToastType;
+  icon: string;
+}
+
+interface DataSet {
+  toasts: Array<Toast>;
+  toastDelay: number;
+}
+
+export default defineComponent({
   name: 'TheToaster',
-
   components: { UiIcon },
-};
+  data(): DataSet {
+    return {
+      toasts: [],
+      toastDelay: 5000,
+    };
+  },
+  methods: {
+    dynamicClasses(toast: Toast) {
+      return {
+        toast_success: toast.type === ToastType.SUCCESS,
+        toast_error: toast.type === ToastType.ERROR,
+      };
+    },
+    addToast(toast: Toast): void {
+      this.toasts.push(toast);
+      this.removeToast(toast);
+    },
+    removeToast(toast: Toast): number {
+      const timeoutId = setTimeout(() => {
+        const index: number = this.toasts.findIndex((item) => item.type === toast.type && item.message === toast.message);
+        this.toasts.splice(index, 1);
+      }, this.toastDelay);
+      return timeoutId;
+    },
+    success(message: string): void {
+      const toast: Toast = {
+        message,
+        type: ToastType.SUCCESS,
+        icon: 'check-circle',
+      };
+      this.addToast(toast);
+    },
+    error(message: string): void {
+      const toast: Toast = {
+        message,
+        type: ToastType.ERROR,
+        icon: 'alert-circle',
+      };
+      this.addToast(toast);
+    },
+  },
+});
 </script>
 
 <style scoped>
