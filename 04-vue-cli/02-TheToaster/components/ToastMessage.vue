@@ -1,14 +1,16 @@
 <template>
-  <div class="toast" :class="dynamicClasses(toast)">
+  <div class="toast" :class="statusClass">
     <ui-icon class="toast__icon" :icon="toast.icon" />
     <span>{{ toast.message }}</span>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from "vue";
+import type { PropType } from 'vue';
+import { defineComponent } from 'vue';
 import UiIcon from './UiIcon.vue';
-import { ToastType, Toast } from './Structures';
+import type { Toast } from './Structures';
+import { ToastType } from './Structures';
 
 export default defineComponent({
   name: 'ToastMessage',
@@ -16,13 +18,16 @@ export default defineComponent({
     UiIcon,
   },
   props: {
-    toast: Object as PropType<Toast>,
+    toast: {
+      type: Object as PropType<Toast>,
+      required: true,
+    },
   },
-  methods: {
-    dynamicClasses(toast: Toast) {
+  computed: {
+    statusClass() {
       return {
-        toast_success: toast.type === ToastType.SUCCESS,
-        toast_error: toast.type === ToastType.ERROR,
+        toast_success: this.toast.type === ToastType.SUCCESS,
+        toast_error: this.toast.type === ToastType.ERROR,
       };
     },
   },

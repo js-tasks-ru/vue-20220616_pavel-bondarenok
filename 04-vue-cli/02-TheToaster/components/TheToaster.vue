@@ -7,7 +7,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ToastMessage from './ToastMessage.vue';
-import { ToastType, Toast } from './Structures';
+import type { Toast } from './Structures';
+import { ToastType } from './Structures';
 
 interface DataSet {
   toasts: Array<Toast>;
@@ -30,9 +31,7 @@ export default defineComponent({
     },
     removeToast(toast: Toast): number {
       return setTimeout(() => {
-        const index: number = this.toasts.findIndex(
-          (item) => item.type === toast.type && item.message === toast.message,
-        );
+        const index: number = this.toasts.indexOf(toast);
         this.toasts.splice(index, 1);
       }, toast.displayedTime);
     },
