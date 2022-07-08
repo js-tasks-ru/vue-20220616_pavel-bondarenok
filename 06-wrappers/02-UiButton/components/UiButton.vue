@@ -1,11 +1,72 @@
 <template>
-  <button class="button button_secondary button_block">BUTTON</button>
+  <component :is="tag" class="button" :class="dynamicClasses" :="htmlAttributes">
+    <slot></slot>
+  </component>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+enum VARIANTS {
+  primary,
+  secondary,
+  danger,
+}
+
+interface ButtonClasses {
+  [key: string]: boolean;
+  button_block: boolean;
+}
+
+interface Attributes {
+  type?: string;
+}
+
+export default defineComponent({
   name: 'UiButton',
-};
+  props: {
+    tag: {
+      type: String,
+      default: 'button',
+    },
+    variant: {
+      type: String,
+      validator: (typeName: string): boolean => Object.keys(VARIANTS).includes(typeName),
+      default: 'secondary',
+    },
+    block: {
+      type: Boolean,
+      default: false
+    },
+  },
+  computed: {
+    // dynamicClasses(): ButtonClasses {
+    //   const map: { [key: string]: string } = {
+    //     primary: 'button_primary',
+    //     secondary: 'button_secondary',
+    //     danger: 'button_danger',
+    //   };
+    //   return {
+    //     [map[this.variant]]: true,
+    //     button_block: this.block,
+    //   };
+    // },
+    dynamicClasses(): ButtonClasses {
+      return {
+        [`button_${this.variant}`]: true,
+        button_block: this.block,
+      };
+    },
+    htmlAttributes(): Attributes {
+      if (this.tag === 'button') {
+        return {
+          type: 'button',
+        };
+      }
+      return {};
+    },
+  },
+});
 </script>
 
 <style scoped>
