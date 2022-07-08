@@ -1,6 +1,6 @@
 <template>
-  <component :is="tag">
-    <a class="link"><slot/></a>
+  <component :is="tag" class="link">
+    <slot/>
   </component>
 </template>
 

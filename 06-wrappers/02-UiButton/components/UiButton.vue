@@ -1,6 +1,6 @@
 <template>
-  <component :is="tag" class="button" :="htmlAttributes">
-    <slot></slot>
+  <component :is="tag" class="button" v-bind="htmlAttributes">
+    <slot />
   </component>
 </template>
 
