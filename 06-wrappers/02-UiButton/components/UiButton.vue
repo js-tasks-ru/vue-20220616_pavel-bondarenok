@@ -1,5 +1,5 @@
 <template>
-  <component :is="tag" class="button" :class="dynamicClasses" :="htmlAttributes">
+  <component :is="tag" class="button" :="htmlAttributes">
     <slot></slot>
   </component>
 </template>
@@ -19,6 +19,7 @@ interface ButtonClasses {
 }
 
 interface Attributes {
+  class: ButtonClasses;
   type?: string;
 }
 
@@ -40,17 +41,6 @@ export default defineComponent({
     },
   },
   computed: {
-    // dynamicClasses(): ButtonClasses {
-    //   const map: { [key: string]: string } = {
-    //     primary: 'button_primary',
-    //     secondary: 'button_secondary',
-    //     danger: 'button_danger',
-    //   };
-    //   return {
-    //     [map[this.variant]]: true,
-    //     button_block: this.block,
-    //   };
-    // },
     dynamicClasses(): ButtonClasses {
       return {
         [`button_${this.variant}`]: true,
@@ -58,12 +48,13 @@ export default defineComponent({
       };
     },
     htmlAttributes(): Attributes {
+      const atributes: Attributes = {
+        class: this.dynamicClasses,
+      };
       if (this.tag === 'button') {
-        return {
-          type: 'button',
-        };
+        atributes.type = 'button';
       }
-      return {};
+      return atributes;
     },
   },
 });
