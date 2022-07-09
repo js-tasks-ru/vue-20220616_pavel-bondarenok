@@ -1,21 +1,82 @@
 <template>
-  <div class="input-group input-group_icon input-group_icon-left input-group_icon-right">
-    <div class="input-group__icon">
-      <img class="icon" alt="icon" />
+  <div
+    class="input-group input-group_icon"
+    :class="{ 'input-group_icon-left': isLeftSlotExist(), 'input-group_icon-right': isRightSlotExist() }"
+  >
+    <div v-if="isLeftSlotExist()" class="input-group__icon">
+      <slot name="left-icon"></slot>
     </div>
+    <component
+      :is="inputTag"
+      v-bind="htmlAttributes"
+      ref="input"
+      class="form-control"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
+    ></component>
 
-    <input ref="input" class="form-control form-control_rounded form-control_sm" />
-
-    <div class="input-group__icon">
-      <img class="icon" alt="icon" />
+    <div v-if="isRightSlotExist()" class="input-group__icon">
+      <slot name="right-icon"></slot>
     </div>
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+interface DynamicClasses {
+  [key: string]: boolean;
+}
+
+interface HtmlAttributes {
+  [key: string]: unknown;
+  class: DynamicClasses;
+}
+
+export default defineComponent({
   name: 'UiInput',
-};
+  inheritAttrs: false,
+  props: {
+    small: Boolean,
+    rounded: Boolean,
+    multiline: Boolean,
+    modelValue: String,
+  },
+  emits: ['update:modelValue'],
+  computed: {
+    // inputValue: {
+    //   get(): string {
+    //     return this.modelValue ?? '';
+    //   },
+    //   set(value: string): void {
+    //     this.$emit('update:modelValue', value);
+    //   },
+    // },
+    inputTag(): string {
+      return this.multiline ? 'textarea' : 'input';
+    },
+    htmlAttributes(): HtmlAttributes {
+      return {
+        ...this.$attrs,
+        class: {
+          'form-control_sm': this.small,
+          'form-control_rounded': this.rounded,
+        },
+      };
+    },
+  },
+  methods: {
+    focus: function (): void {
+      (this.$refs['input'] as HTMLInputElement).focus();
+    },
+    isLeftSlotExist(): boolean {
+      return !!this.$slots['left-icon'];
+    },
+    isRightSlotExist(): boolean {
+      return !!this.$slots['right-icon'];
+    },
+  },
+});
 </script>
 
 <style scoped>
