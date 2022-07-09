@@ -1,8 +1,6 @@
 <template>
-  <div
-    class="input-group input-group_icon"
-    :class="{ 'input-group_icon-left': isLeftSlotExist(), 'input-group_icon-right': isRightSlotExist() }"
-  >
+  <div class="input-group input-group_icon" :class="{ 'input-group_icon-left': isLeftSlotExist(), 'input-group_icon-right': isRightSlotExist() }">
+    
     <div v-if="isLeftSlotExist()" class="input-group__icon">
       <slot name="left-icon"></slot>
     </div>
