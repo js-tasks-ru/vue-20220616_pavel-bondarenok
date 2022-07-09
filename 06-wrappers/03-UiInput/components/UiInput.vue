@@ -12,7 +12,8 @@
       ref="input"
       class="form-control"
       :value="modelValue"
-      @input="$emit('update:modelValue', $event.target.value)"
+      @input="emitValueOnInput"
+      @change="emitValueOnChange"
     ></component>
 
     <div v-if="isRightSlotExist()" class="input-group__icon">
@@ -33,6 +34,10 @@ interface HtmlAttributes {
   class: DynamicClasses;
 }
 
+interface ModelModifiers {
+  lazy?: boolean;
+}
+
 export default defineComponent({
   name: 'UiInput',
   inheritAttrs: false,
@@ -41,17 +46,12 @@ export default defineComponent({
     rounded: Boolean,
     multiline: Boolean,
     modelValue: String,
+    modelModifiers: {
+      default: (): ModelModifiers => ({}),
+    },
   },
   emits: ['update:modelValue'],
   computed: {
-    // inputValue: {
-    //   get(): string {
-    //     return this.modelValue ?? '';
-    //   },
-    //   set(value: string): void {
-    //     this.$emit('update:modelValue', value);
-    //   },
-    // },
     inputTag(): string {
       return this.multiline ? 'textarea' : 'input';
     },
@@ -74,6 +74,16 @@ export default defineComponent({
     },
     isRightSlotExist(): boolean {
       return !!this.$slots['right-icon'];
+    },
+    emitValueOnInput(event: Event): void {
+      if (this.modelModifiers.lazy === undefined) {
+        this.$emit('update:modelValue', (event.target as HTMLInputElement).value);
+      }
+    },
+    emitValueOnChange(event: Event): void {
+      if (this.modelModifiers.lazy) {
+        this.$emit('update:modelValue', (event.target as HTMLInputElement).value);
+      }
     },
   },
 });
