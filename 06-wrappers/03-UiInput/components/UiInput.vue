@@ -1,6 +1,12 @@
 <template>
-  <div class="input-group input-group_icon" :class="{ 'input-group_icon-left': isLeftSlotExist(), 'input-group_icon-right': isRightSlotExist() }">
-    
+  <div
+    class="input-group"
+    :class="{
+      'input-group_icon': isLeftSlotExist() || isRightSlotExist(),
+      'input-group_icon-left': isLeftSlotExist(),
+      'input-group_icon-right': isRightSlotExist(),
+    }"
+  >
     <div v-if="isLeftSlotExist()" class="input-group__icon">
       <slot name="left-icon"></slot>
     </div>
@@ -10,8 +16,7 @@
       ref="input"
       class="form-control"
       :value="modelValue"
-      @input="emitValueOnInput"
-      @change="emitValueOnChange"
+      @[triggerName]="$emit('update:modelValue', $event.target.value)"
     ></component>
 
     <div v-if="isRightSlotExist()" class="input-group__icon">
@@ -33,7 +38,7 @@ interface HtmlAttributes {
 }
 
 interface ModelModifiers {
-  lazy?: boolean;
+  lazy: boolean;
 }
 
 export default defineComponent({
@@ -45,7 +50,9 @@ export default defineComponent({
     multiline: Boolean,
     modelValue: String,
     modelModifiers: {
-      default: (): ModelModifiers => ({}),
+      default: (): ModelModifiers => ({
+        lazy: false,
+      }),
     },
   },
   emits: ['update:modelValue'],
@@ -62,6 +69,9 @@ export default defineComponent({
         },
       };
     },
+    triggerName(): string {
+      return this.modelModifiers.lazy ? 'change' : 'input';
+    },
   },
   methods: {
     focus: function (): void {
@@ -73,16 +83,16 @@ export default defineComponent({
     isRightSlotExist(): boolean {
       return !!this.$slots['right-icon'];
     },
-    emitValueOnInput(event: Event): void {
-      if (this.modelModifiers.lazy === undefined) {
-        this.$emit('update:modelValue', (event.target as HTMLInputElement).value);
-      }
-    },
-    emitValueOnChange(event: Event): void {
-      if (this.modelModifiers.lazy) {
-        this.$emit('update:modelValue', (event.target as HTMLInputElement).value);
-      }
-    },
+    // emitValueOnInput(event: Event): void {
+    //   if (this.modelModifiers.lazy === undefined) {
+    //     this.$emit('update:modelValue', (event.target as HTMLInputElement).value);
+    //   }
+    // },
+    // emitValueOnChange(event: Event): void {
+    //   if (this.modelModifiers.lazy) {
+    //     this.$emit('update:modelValue', (event.target as HTMLInputElement).value);
+    //   }
+    // },
   },
 });
 </script>
