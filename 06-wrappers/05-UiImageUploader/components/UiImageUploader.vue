@@ -1,22 +1,110 @@
 <template>
   <div class="image-uploader">
-    <label class="image-uploader__preview image-uploader__preview-loading" style="--bg-url: url('/link.jpeg')">
-      <span class="image-uploader__text">Загрузить изображение</span>
-      <input type="file" accept="image/*" class="image-uploader__input" />
+    <label
+      class="image-uploader__preview"
+      :class="{ 'image-uploader__preview-loading': isLoading }"
+      :style="backGroundImageUrl"
+      @click="removeFile"
+    >
+      <span class="image-uploader__text">{{ labelDescription }}</span>
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        class="image-uploader__input"
+        v-bind="$attrs"
+        :disabled="isLoading"
+        @change="uploadFile"
+      />
     </label>
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from '@vue/runtime-core';
+
+interface DataSet {
+  tempImage: string;
+  isLoading: boolean;
+}
+
+export default defineComponent({
   name: 'UiImageUploader',
-};
+  inheritAttrs: false,
+  props: {
+    preview: String,
+    uploader: Function,
+  },
+  emits: ['select', 'upload', 'error', 'remove'],
+  data(): DataSet {
+    return {
+      tempImage: this.preview as string,
+      isLoading: false,
+    };
+  },
+  computed: {
+    backGroundImageUrl: {
+      get(): string {
+        if (this.tempImage) {
+          return `--bg-url: url('${this.tempImage}')`;
+        }
+        return '';
+      },
+      set(value: string): void {
+        this.tempImage = value;
+      },
+    },
+    labelDescription(): string {
+      if (this.isLoading) {
+        return 'Загрузка...';
+      }
+      if (this.backGroundImageUrl) {
+        return 'Удалить изображение';
+      }
+      return 'Загрузить изображение';
+    },
+  },
+  watch: {
+    preview(newUrl: string, oldUrl: string): void {
+      this.backGroundImageUrl = newUrl;
+    },
+  },
+  methods: {
+    async uploadFile(): Promise<void> {
+      this.isLoading = true;
+
+      const [file] = (this.$refs.fileInput as HTMLInputElement).files as FileList;
+      this.backGroundImageUrl = URL.createObjectURL(file);
+      this.$emit('select', file);
+
+      if (this.uploader) { //this.uploader instanceof Function doesn't work
+        try {
+          const uploadResult = await this.uploader(file);
+          this.$emit('upload', uploadResult);
+        } catch (ex) {
+          (this.$refs.fileInput as HTMLInputElement).value = '';
+          this.backGroundImageUrl = '';
+          this.$emit('error', ex);
+        }
+      }
+      this.isLoading = false;
+    },
+    removeFile(event: Event): void {
+      if (this.isLoading) {
+        return;
+      }
+      if (this.backGroundImageUrl) {
+        event.preventDefault();
+        (this.$refs.fileInput as HTMLInputElement).value = '';
+        this.backGroundImageUrl = '';
+        this.$emit('remove');
+      }
+    },
+  },
+});
 </script>
 
 <style scoped>
-.image-uploader {
-}
-
 .image-uploader__input {
   opacity: 0;
   height: 0;
