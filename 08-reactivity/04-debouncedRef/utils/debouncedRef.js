@@ -1,5 +1,5 @@
-import { ref, watch } from 'vue';
-import debounce from 'lodash/debounce';
+import { ref, watch } from "vue";
+import debounce from "lodash/debounce";
 
 /**
  * @template T
@@ -8,7 +8,15 @@ import debounce from 'lodash/debounce';
  * @returns {Ref<T>} - Новый ref, обновляющийся с debounce при обновлении исходного ref-а
  */
 export function debouncedRef(source, wait) {
-  const debounced = ref(undefined); // ...
-  // ...
+  const debounced = ref(undefined);
+  debounced.value = source.value;
+
+  let timerid = 0;
+  watch(source, async (newVal, oldVal) => {
+    clearTimeout(timerid);
+    timerid = setTimeout(() => {
+      debounced.value = source.value;
+    }, wait);
+  });
   return debounced;
 }

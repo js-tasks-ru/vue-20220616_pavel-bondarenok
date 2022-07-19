@@ -42,7 +42,7 @@ export default {
     },
 
     setData(sensors) {
-      this.sensors = sensors;
+      this.sensors = window.structuredClone(sensors);
     },
   },
 };

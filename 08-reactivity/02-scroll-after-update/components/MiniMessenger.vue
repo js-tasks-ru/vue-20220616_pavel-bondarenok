@@ -13,10 +13,13 @@
   </main>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from '@vue/runtime-core';
+import { nextTick } from "vue";
+
 let lastId = 0;
 
-export default {
+export default defineComponent({
   name: 'MiniMessenger',
 
   data() {
@@ -32,8 +35,11 @@ export default {
   },
 
   methods: {
-    handleSendSubmit() {
+    async handleSendSubmit() {
       this.send();
+      await nextTick();
+      const lastMessage: HTMLElement = this.$refs.items[this.messages.length - 1] as HTMLElement;
+      lastMessage.scrollIntoView();
     },
 
     send() {
@@ -44,7 +50,7 @@ export default {
       this.newMessage = '';
     },
   },
-};
+});
 </script>
 
 <style scoped>
