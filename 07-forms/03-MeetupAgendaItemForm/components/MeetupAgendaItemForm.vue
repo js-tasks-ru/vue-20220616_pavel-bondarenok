@@ -1,46 +1,45 @@
 <template>
   <fieldset class="agenda-item-form">
-    <button type="button" class="agenda-item-form__remove-button">
+    <button type="button" class="agenda-item-form__remove-button" @click="$emit('remove')">
       <ui-icon icon="trash" />
     </button>
 
     <ui-form-group>
-      <ui-dropdown title="Тип" :options="$options.agendaItemTypeOptions" name="type" />
+      <ui-dropdown v-model="localItem.type" title="Тип" :options="$options.agendaItemTypeOptions" name="type" />
     </ui-form-group>
 
     <div class="agenda-item-form__row">
       <div class="agenda-item-form__col">
         <ui-form-group label="Начало">
-          <ui-input type="time" placeholder="00:00" name="startsAt" />
+          <ui-input
+            v-model="localItem.startsAt"
+            type="time"
+            placeholder="00:00"
+            name="startsAt"
+            @change="changedStartTime"
+          />
         </ui-form-group>
       </div>
       <div class="agenda-item-form__col">
         <ui-form-group label="Окончание">
-          <ui-input type="time" placeholder="00:00" name="endsAt" />
+          <ui-input v-model="localItem.endsAt" type="time" placeholder="00:00" name="endsAt" @change="changedEndTime"/>
         </ui-form-group>
       </div>
     </div>
 
-    <ui-form-group label="Тема">
-      <ui-input name="title" />
-    </ui-form-group>
-    <ui-form-group label="Докладчик">
-      <ui-input name="speaker" />
-    </ui-form-group>
-    <ui-form-group label="Описание">
-      <ui-input multiline name="description" />
-    </ui-form-group>
-    <ui-form-group label="Язык">
-      <ui-dropdown title="Язык" :options="$options.talkLanguageOptions" name="language" />
+    <ui-form-group v-for="(item, key) in $options.agendaItemFormSchemas[localItem.type]" :key="key" :label="item.label">
+      <component :is="item.component" v-bind="item.props" v-model="localItem[key]"></component>
     </ui-form-group>
   </fieldset>
 </template>
 
-<script>
-import UiIcon from './UiIcon';
-import UiFormGroup from './UiFormGroup';
-import UiInput from './UiInput';
-import UiDropdown from './UiDropdown';
+<script lang="ts">
+import UiIcon from './UiIcon.vue';
+import UiFormGroup from './UiFormGroup.vue';
+import UiInput from './UiInput.vue';
+import UiDropdown from './UiDropdown.vue';
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
 
 const agendaItemTypeIcons = {
   registration: 'key',
@@ -64,9 +63,13 @@ const agendaItemDefaultTitles = {
   other: 'Другое',
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 const agendaItemTypeOptions = Object.entries(agendaItemDefaultTitles).map(([type, title]) => ({
   value: type,
   text: title,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   icon: agendaItemTypeIcons[type],
 }));
 
@@ -76,21 +79,162 @@ const talkLanguageOptions = [
   { value: 'EN', text: 'EN' },
 ];
 
-export default {
-  name: 'MeetupAgendaItemForm',
+/**
+ * @typedef FormItemSchema
+ * @property {string} label
+ * @property {string|object} component
+ * @property {object} props
+ */
+/** @typedef {string} AgendaItemField */
+/** @typedef {string} AgendaItemType */
+/** @typedef {Object.<AgendaItemType, FormItemSchema>} FormSchema */
 
-  agendaItemTypeOptions,
-  talkLanguageOptions,
-
-  components: { UiIcon, UiFormGroup, UiInput, UiDropdown },
-
-  props: {
-    agendaItem: {
-      type: Object,
-      required: true,
+/** @type FormSchema */
+const commonAgendaItemFormSchema = {
+  title: {
+    label: 'Нестандартный текст (необязательно)',
+    component: 'ui-input',
+    props: {
+      name: 'title',
     },
   },
 };
+
+/** @type {Object.<AgendaItemField, FormSchema>} */
+const agendaItemFormSchemas = {
+  registration: commonAgendaItemFormSchema,
+  opening: commonAgendaItemFormSchema,
+  talk: {
+    title: {
+      label: 'Тема',
+      component: 'ui-input',
+      props: {
+        name: 'title',
+      },
+    },
+    speaker: {
+      label: 'Докладчик',
+      component: 'ui-input',
+      props: {
+        name: 'speaker',
+      },
+    },
+    description: {
+      label: 'Описание',
+      component: 'ui-input',
+      props: {
+        multiline: true,
+        name: 'description',
+      },
+    },
+    language: {
+      label: 'Язык',
+      component: 'ui-dropdown',
+      props: {
+        options: talkLanguageOptions,
+        title: 'Язык',
+        name: 'language',
+      },
+    },
+  },
+  break: commonAgendaItemFormSchema,
+  coffee: commonAgendaItemFormSchema,
+  closing: commonAgendaItemFormSchema,
+  afterparty: commonAgendaItemFormSchema,
+  other: {
+    title: {
+      label: 'Заголовок',
+      component: 'ui-input',
+      props: {
+        name: 'title',
+      },
+    },
+    description: {
+      label: 'Описание',
+      component: 'ui-input',
+      props: {
+        multiline: true,
+        name: 'description',
+      },
+    },
+  },
+};
+
+interface DataSet {
+  localItem: AgendaItem;
+  startTime: number;
+  endTime: number;
+  eventDurationMils: number;
+}
+
+enum AgendaTypes {
+  registration = 'registration',
+  opening = 'opening',
+  talk = 'talk',
+  break = 'break',
+  coffee = 'coffee',
+  closing = 'closing',
+  afterparty = 'afterparty',
+  other = 'other',
+}
+
+interface AgendaItem {
+  id: number;
+  type: AgendaTypes;
+  startsAt: string;
+  endsAt: string;
+  [key: string]: unknown;
+}
+
+export default defineComponent({
+  name: 'MeetupAgendaItemForm',
+  components: { UiIcon, UiFormGroup, UiInput, UiDropdown },
+
+  agendaItemTypeOptions,
+  agendaItemFormSchemas,
+
+  props: {
+    agendaItem: {
+      type: Object as PropType<AgendaItem>,
+      required: true,
+    },
+  },
+  emits: ['remove', 'update:agendaItem'],
+  data(): DataSet {
+    const start = this.getTimeMils(this.agendaItem.startsAt);
+    const end = this.getTimeMils(this.agendaItem.endsAt);
+    return {
+      localItem: { ...this.agendaItem },
+      startTime: start,
+      endTime: end,
+      eventDurationMils: end - start,
+    };
+  },
+  watch: {
+    localItem: {
+      deep: true,
+      handler(newValue, oldValue): void {
+        this.$emit('update:agendaItem', { ...newValue });
+      },
+    },
+  },
+  methods: {
+    getTimeMils(time: string): number {
+      const offset: number = new Date().getTimezoneOffset();
+      const [hours, minutes]: number[] = time.split(':').map((val) => parseInt(val));
+      return new Date(1970, 0, 1, hours, minutes).setMinutes(-1 * offset);
+    },
+    changedStartTime(event: Event): void {
+      this.startTime = (event.target as HTMLInputElement).valueAsNumber;
+      this.endTime = this.startTime + this.eventDurationMils;
+      this.localItem.endsAt = new Date(this.endTime).toISOString().slice(11, 16);
+    },
+    changedEndTime(event: Event): void {
+      this.endTime = (event.target as HTMLInputElement).valueAsNumber;
+      this.eventDurationMils = this.endTime - this.startTime;
+    },
+  },
+});
 </script>
 
 <style scoped>

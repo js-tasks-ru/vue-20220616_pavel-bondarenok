@@ -1,40 +1,45 @@
 <template>
   <fieldset class="agenda-item-form">
-    <button type="button" class="agenda-item-form__remove-button">
+    <button type="button" class="agenda-item-form__remove-button" @click="$emit('remove')">
       <ui-icon icon="trash" />
     </button>
 
     <ui-form-group>
-      <ui-dropdown title="Тип" :options="$options.agendaItemTypeOptions" name="type" />
+      <ui-dropdown v-model="localItem.type" title="Тип" :options="$options.agendaItemTypeOptions" name="type" />
     </ui-form-group>
 
     <div class="agenda-item-form__row">
       <div class="agenda-item-form__col">
         <ui-form-group label="Начало">
-          <ui-input type="time" placeholder="00:00" name="startsAt" />
+          <ui-input
+            v-model="localItem.startsAt"
+            type="time"
+            placeholder="00:00"
+            name="startsAt"
+            @change="changedStartTime"
+          />
         </ui-form-group>
       </div>
       <div class="agenda-item-form__col">
         <ui-form-group label="Окончание">
-          <ui-input type="time" placeholder="00:00" name="endsAt" />
+          <ui-input v-model="localItem.endsAt" type="time" placeholder="00:00" name="endsAt" @change="changedEndTime"/>
         </ui-form-group>
       </div>
     </div>
 
-    <ui-form-group label="Заголовок">
-      <ui-input name="title" />
-    </ui-form-group>
-    <ui-form-group label="Описание">
-      <ui-input multiline name="description" />
+    <ui-form-group v-for="(item, key) in $options.agendaItemFormSchemas[localItem.type]" :key="key" :label="item.label">
+      <component :is="item.component" v-bind="item.props" v-model="localItem[key]"></component>
     </ui-form-group>
   </fieldset>
 </template>
 
-<script>
-import UiIcon from './UiIcon';
-import UiFormGroup from './UiFormGroup';
-import UiInput from './UiInput';
-import UiDropdown from './UiDropdown';
+<script lang="ts">
+import UiIcon from './UiIcon.vue';
+import UiFormGroup from './UiFormGroup.vue';
+import UiInput from './UiInput.vue';
+import UiDropdown from './UiDropdown.vue';
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
 
 const agendaItemTypeIcons = {
   registration: 'key',
@@ -58,9 +63,13 @@ const agendaItemDefaultTitles = {
   other: 'Другое',
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 const agendaItemTypeOptions = Object.entries(agendaItemDefaultTitles).map(([type, title]) => ({
   value: type,
   text: title,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   icon: agendaItemTypeIcons[type],
 }));
 
@@ -151,9 +160,34 @@ const agendaItemFormSchemas = {
   },
 };
 
-export default {
-  name: 'MeetupAgendaItemForm',
+interface DataSet {
+  localItem: AgendaItem;
+  startTime: number;
+  endTime: number;
+  eventDurationMils: number;
+}
 
+enum AgendaTypes {
+  registration = 'registration',
+  opening = 'opening',
+  talk = 'talk',
+  break = 'break',
+  coffee = 'coffee',
+  closing = 'closing',
+  afterparty = 'afterparty',
+  other = 'other',
+}
+
+interface AgendaItem {
+  id: number;
+  type: AgendaTypes;
+  startsAt: string;
+  endsAt: string;
+  [key: string]: unknown;
+}
+
+export default defineComponent({
+  name: 'MeetupAgendaItemForm',
   components: { UiIcon, UiFormGroup, UiInput, UiDropdown },
 
   agendaItemTypeOptions,
@@ -161,11 +195,46 @@ export default {
 
   props: {
     agendaItem: {
-      type: Object,
+      type: Object as PropType<AgendaItem>,
       required: true,
     },
   },
-};
+  emits: ['remove', 'update:agendaItem'],
+  data(): DataSet {
+    const start = this.getTimeMils(this.agendaItem.startsAt);
+    const end = this.getTimeMils(this.agendaItem.endsAt);
+    return {
+      localItem: { ...this.agendaItem },
+      startTime: start,
+      endTime: end,
+      eventDurationMils: end - start,
+    };
+  },
+  watch: {
+    localItem: {
+      deep: true,
+      handler(newValue, oldValue): void {
+        this.$emit('update:agendaItem', { ...newValue });
+      },
+    },
+  },
+  methods: {
+    getTimeMils(time: string): number {
+      const offset: number = new Date().getTimezoneOffset();
+      const [hours, minutes]: number[] = time.split(':').map((val) => parseInt(val));
+      return new Date(1970, 0, 1, hours, minutes).setMinutes(-1 * offset);
+    },
+    changedStartTime(event: Event): void {
+      this.startTime = (event.target as HTMLInputElement).valueAsNumber;
+      this.endTime = this.startTime + this.eventDurationMils;
+      this.localItem.endsAt = new Date(this.endTime).toISOString().slice(11, 16);
+    },
+    changedEndTime(event: Event): void {
+      this.endTime = (event.target as HTMLInputElement).valueAsNumber;
+      this.eventDurationMils = this.endTime - this.startTime;
+    },
+  },
+});
 </script>
 
 <style scoped>
